@@ -13,7 +13,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  if (!["admin", "teacher", "student"].includes(role)) {
+  if (!["admin", "user"].includes(role)) {
     throw new ApiError(400, "Invalid role");
   }
 
@@ -44,6 +44,13 @@ const registerUser = asyncHandler(async (req, res) => {
 const deleteUser = asyncHandler(async (req, res) => {
   const { _id } = req.params;
 
+  if (req.user._id.toString() !== _id && req.user.role !== "admin") {
+    throw new ApiError(
+      403,
+      "You do not have permission to delete this account"
+    );
+  }
+
   const user = await userModel.findOne({ _id });
   if (!user) throw new ApiError(404, "User not found");
 
@@ -63,6 +70,13 @@ const deleteUser = asyncHandler(async (req, res) => {
 const updateUser = asyncHandler(async (req, res) => {
   const { name, email } = req.body;
   const { _id } = req.params;
+
+  if (req.user._id.toString() !== _id && req.user.role !== "admin") {
+    throw new ApiError(
+      403,
+      "You do not have permission to update this account"
+    );
+  }
 
   const user = await userModel.findById(_id);
   if (!user) {
@@ -150,30 +164,9 @@ const getUser = asyncHandler(async (req, res) => {
   }
 });
 
-const updateFcmToken = asyncHandler(async (req, res) => {
-  const { fcmToken } = req.body;
-  const userId = req.user._id;
-
-  if (!fcmToken) {
-    throw new ApiError(400, "FCM token is required");
-  }
-
-  const updatedUser = await userModel
-    .findByIdAndUpdate(userId, { fcmToken }, { new: true })
-    .select("-password");
-
-  if (!updatedUser) {
-    throw new ApiError(404, "User not found");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, updatedUser, "FCM token updated successfully"));
-});
-
 const getUsers = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, sort = "asc", role } = req.query;
-  const cacheKey = `users:${role}:${page}:${limit}:${sort}`;
+  const { page = 1, limit = 10, sort = "asc" } = req.query;
+  const cacheKey = `users:${page}:${limit}:${sort}`;
 
   const cachedUsers = await redisClient.get(cacheKey);
   if (cachedUsers) {
@@ -195,10 +188,8 @@ const getUsers = asyncHandler(async (req, res) => {
     select: "-password",
   };
 
-  const query = role ? { role } : {};
-
   try {
-    const users = await userModel.paginate(query, options);
+    const users = await userModel.paginate({}, options);
 
     await redisClient.set(cacheKey, JSON.stringify(users), { EX: 60 * 10 }); // Cache for 10 minutes
 
@@ -211,14 +202,6 @@ const getUsers = asyncHandler(async (req, res) => {
   }
 });
 
-const getTeachers = asyncHandler(async (req, res) => {
-  const teachers = await userModel.find({ role: "teacher" }).select("_id name");
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, teachers, "Teachers fetched successfully"));
-});
-
 export {
   registerUser,
   login,
@@ -226,7 +209,5 @@ export {
   getUser,
   updateUser,
   deleteUser,
-  updateFcmToken,
   getUsers,
-  getTeachers,
 };

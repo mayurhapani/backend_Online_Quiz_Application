@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { userRouter } from "./routers/user.router.js";
+import { quizRouter } from "./routers/quiz.router.js"; // Add this line
+import { responseRouter } from "./routers/response.router.js"; // Add this line
 
 const app = express();
 
@@ -23,6 +25,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/quizzes", quizRouter); // Add this line
+app.use("/api/v1/responses", responseRouter); // Add this line
 
 app.use((err, req, res, next) => {
   console.error("Error details:", err);
