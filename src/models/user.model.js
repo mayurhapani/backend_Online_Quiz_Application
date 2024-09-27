@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
-import mongoosePaginate from 'mongoose-paginate-v2';
+import mongoosePaginate from "mongoose-paginate-v2";
 
 const userSchema = new Schema(
   {
@@ -22,6 +22,7 @@ const userSchema = new Schema(
     role: {
       type: String,
       required: true,
+      default: "user",
       enum: ["admin", "user"], // Updated roles
     },
   },

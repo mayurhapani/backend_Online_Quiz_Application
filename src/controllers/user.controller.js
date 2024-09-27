@@ -7,14 +7,10 @@ import jwt from "jsonwebtoken";
 import redisClient from "../config/redis.js";
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
 
-  if ([name, email, password, role].some((fields) => fields?.trim() === "")) {
+  if ([name, email, password].some((fields) => fields?.trim() === "")) {
     throw new ApiError(400, "All fields are required");
-  }
-
-  if (!["admin", "user"].includes(role)) {
-    throw new ApiError(400, "Invalid role");
   }
 
   const existedUser = await userModel.findOne({ email });
@@ -27,7 +23,6 @@ const registerUser = asyncHandler(async (req, res) => {
     name,
     email,
     password,
-    role,
   });
 
   const createdUser = await userModel.findById(user._id).select("-password");
