@@ -4,6 +4,6 @@ import { isAuth } from "../middlewares/isAuth.middleware.js";
 
 const responseRouter = Router();
 
-responseRouter.get("/", isAuth, getResponses);
+responseRouter.get("/:quizId", isAuth, getResponses);
 
 export { responseRouter };
